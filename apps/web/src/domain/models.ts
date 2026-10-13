@@ -85,6 +85,26 @@ export interface PointEvent {
   createdAt: string | null;
 }
 
+/** GET /matches/{id}/awards */
+export interface PlayerImpact {
+  playerId: string;
+  name: string;
+  teamName: string;
+  impact: number;
+  summary: string;
+}
+
+export interface MatchAwards {
+  available: boolean;
+  /** The scorer's pick, or the suggestion when none was made. */
+  playerOfMatch: PlayerImpact | null;
+  chosen: boolean;
+  suggestion: PlayerImpact | null;
+  awards: { key: string; title: string; description: string; playerId: string; name: string; teamName: string; value: string }[];
+  /** Everyone who played, best impact first. */
+  candidates: PlayerImpact[];
+}
+
 /** GET /matches/{id}/scorecard */
 export interface ScorecardData {
   matchId: string;

@@ -449,3 +449,10 @@ table.table { width: 100%; border-collapse: collapse; min-width: 520px; font-siz
 .sc-notout { color: var(--success); font-weight: 600; }
 .sc-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; padding: 12px 16px; border-top: 1px solid var(--border); }
 .card > .table-wrap { border: 0; border-radius: 0; }
+
+/* match awards */
+.potm { padding: 18px; border: 1px solid rgba(245, 196, 81, .5); background: linear-gradient(135deg, #3a2a05, #1b1530); }
+.potm-badge { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #f5c451, #e08e0b); box-shadow: 0 10px 20px -10px #e08e0b; flex: none; }
+.potm-label { font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #f5c451; }
+.potm-name { font-size: 20px; font-weight: 800; color: #fff; }
+.potm-name:hover { text-decoration: underline; }

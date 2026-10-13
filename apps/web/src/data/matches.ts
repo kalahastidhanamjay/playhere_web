@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { currentInnings, sortedInnings } from "@/domain/cricket";
-import type { BallEvent, Innings, Match, PointEvent, ScorecardData } from "@/domain/models";
+import type { BallEvent, Innings, Match, MatchAwards, PointEvent, ScorecardData } from "@/domain/models";
 import { isCricket } from "@/domain/sports";
 import { api } from "@/lib/api";
 import { useUserId } from "@/lib/session";
@@ -26,6 +26,9 @@ export const matchApi = {
     periods?: number;
     venue?: string;
   }) => api.post<Match>("/matches", body),
+  awards: (id: string) => api.get<MatchAwards>(`/matches/${id}/awards`),
+  /** Pass null to go back to the suggested player. */
+  choosePlayerOfMatch: (id: string, playerId: string | null) => api.put(`/matches/${id}/player-of-match`, { playerId }),
   scorecard: (id: string) => api.get<ScorecardData>(`/matches/${id}/scorecard`),
   points: (id: string) => api.get<PointEvent[]>(`/matches/${id}/points`),
   addPoints: (id: string, teamId: string, points: number, label?: string, playerName?: string) =>
@@ -91,6 +94,7 @@ export function useMatchCenter(id: string, { live = true } = {}) {
   const refetch = useRef(query.refetch);
   refetch.current = () => {
     void queryClient.invalidateQueries({ queryKey: ["scorecard", id] });
+    void queryClient.invalidateQueries({ queryKey: ["awards", id] });
     return query.refetch();
   };
   const finished = query.data?.match.status === "COMPLETED";
@@ -104,3 +108,6 @@ export function useMatchCenter(id: string, { live = true } = {}) {
 /** Full cricket scorecard; refreshed with the match centre while the match is live. */
 export const useScorecard = (id: string, enabled: boolean, live: boolean) =>
   useQuery({ queryKey: ["scorecard", id], queryFn: () => matchApi.scorecard(id), enabled, refetchInterval: live ? 20_000 : false });
+
+/** Player of the match and awards (cricket). */
+export const useAwards = (id: string) => useQuery({ queryKey: ["awards", id], queryFn: () => matchApi.awards(id) });

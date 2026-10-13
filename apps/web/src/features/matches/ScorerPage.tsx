@@ -12,6 +12,7 @@ import { isCricket } from "@/domain/sports";
 import { fmt, parseDate } from "@/lib/format";
 import { teamApi, useSquad } from "@/data/teams";
 import { batterFigures, bowlerFigures, dismissed, LineupPanel, missingRole, PlayerPickerDialog, type LineupRole } from "./Lineup";
+import { AwardsSection } from "./Awards";
 import { PlayingSquadsStep } from "./PlayingSquads";
 import { PointsScorer } from "./PointsScorer";
 
@@ -61,6 +62,7 @@ export default function ScorerPage() {
   if (match.status === "COMPLETED") {
     const last = match.innings.length ? [...match.innings].sort((a, b) => a.inningsNo - b.inningsNo)[match.innings.length - 1] : null;
     return wrap(
+      <div className="stack" style={{ gap: 8 }}>
       <Empty
         icon={Trophy}
         title="Match completed"
@@ -84,7 +86,9 @@ export default function ScorerPage() {
             )}
           </div>
         }
-      />,
+      />
+      {isCricket(match.sportType) && <AwardsSection matchId={id} canEdit />}
+      </div>,
     );
   }
 

@@ -5,6 +5,7 @@ import { BallChip } from "@/components/cards";
 import { ButtonLink, Crest, Group, GroupRow, PageHeader, QueryView, Section, SkeletonList, StatusPill } from "@/components/ui";
 import { useMatchCenter, useScorecard } from "@/data/matches";
 import { Tabs } from "@/components/forms";
+import { AwardsSection } from "./Awards";
 import { Scorecard } from "./Scorecard";
 import { SportTag } from "@/components/sport";
 import { away, canScore, chase, formatLabel, matchContext, groupByOver, headline, home, inningsFor, periodName, score, sideScore, sortedInnings, stageLabel, teamById, thisOver } from "@/domain/cricket";
@@ -107,6 +108,7 @@ export default function MatchCenterPage() {
                 </div>
               ) : (
                 <>
+                  {cricket && match.status === "COMPLETED" && <AwardsSection matchId={match.id} canEdit={canScore(match, userId)} />}
               {over.length > 0 && (
                 <Section title="This over">
                   <div className="row wrap" style={{ "--gap": "8px" } as CSSProperties}>
