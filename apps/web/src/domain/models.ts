@@ -59,6 +59,11 @@ export interface Match {
   homeTeam: TeamRef | null;
   awayTeam: TeamRef | null;
   winnerTeamId: string | null;
+  /** Server-written result, e.g. "Tigers won by 4 wickets" (cricket). */
+  result: string | null;
+  /** Players each side fields today; empty when not picked. */
+  homePlaying: string[];
+  awayPlaying: string[];
   streamActive: boolean;
   innings: Innings[];
 }

@@ -33,6 +33,7 @@ export const matchApi = {
   undoPoints: (id: string) => api.del<Match>(`/matches/${id}/points/last`),
   nextPeriod: (id: string) => api.post<Match>(`/matches/${id}/period/next`),
   start: (id: string) => api.post(`/matches/${id}/start`),
+  setPlaying: (id: string, teamId: string, playerIds: string[]) => api.put(`/matches/${id}/playing`, { teamId, playerIds }),
   openInnings: (id: string, inningsNo: number, battingTeamId: string, bowlingTeamId: string) =>
     api.post(`/matches/${id}/innings`, { inningsNo, battingTeamId, bowlingTeamId }),
   ball: (inningsId: string, b: { runs: number; extras: number; extraType: string; wicketType: string; outPlayerId?: string; fielderId?: string }) =>

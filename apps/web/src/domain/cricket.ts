@@ -97,6 +97,7 @@ export function chase(m: Match, focus: Innings | null) {
 /** One-line summary: result, chase equation, or start time. */
 export function headline(m: Match): string {
   if (!isCricket(m.sportType)) return pointsHeadline(m);
+  if (m.status === "COMPLETED" && m.result) return m.result;
   const list = sortedInnings(m);
   if (m.status === "COMPLETED") {
     if (!m.winnerTeamId) return "Match tied / no result";

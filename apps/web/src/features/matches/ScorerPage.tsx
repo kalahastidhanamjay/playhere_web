@@ -12,6 +12,7 @@ import { isCricket } from "@/domain/sports";
 import { fmt, parseDate } from "@/lib/format";
 import { teamApi, useSquad } from "@/data/teams";
 import { batterFigures, bowlerFigures, dismissed, LineupPanel, missingRole, PlayerPickerDialog, type LineupRole } from "./Lineup";
+import { PlayingSquadsStep } from "./PlayingSquads";
 import { PointsScorer } from "./PointsScorer";
 
 type Picker = { title: string; options: { value: number; label: string }[]; onPick: (n: number) => void } | null;
@@ -87,6 +88,35 @@ export default function ScorerPage() {
     );
   }
 
+  const squadsByTeam: Record<string, Player[]> = { [home(match).id]: homeSquad.data ?? [], [away(match).id]: awaySquad.data ?? [] };
+  const hasPlaying = (match.homePlaying?.length ?? 0) > 0 && (match.awayPlaying?.length ?? 0) > 0;
+  // Cricket: pick who plays for each side before the toss (also for matches started without it).
+  if (isCricket(match.sportType) && match.innings.length === 0 && (match.status === "SCHEDULED" || !hasPlaying)) {
+    const scheduled = match.status === "SCHEDULED";
+    // Wait for both squads so the ticks start from the full lists.
+    if (!homeSquad.data || !awaySquad.data) return wrap(<SkeletonList count={2} height={220} />);
+    return wrap(
+      <PlayingSquadsStep
+        match={match}
+        squads={squadsByTeam}
+        busy={busy}
+        actionLabel={scheduled ? "Start match" : "Continue to the toss"}
+        onAdd={async (teamId, name) => {
+          const before = new Set((squadsByTeam[teamId] ?? []).map((p) => p.id));
+          const squad = await teamApi.addGuest(teamId, name);
+          queryClient.setQueryData(["team", teamId, "squad"], squad);
+          return squad.find((p) => !before.has(p.id)) ?? null;
+        }}
+        onConfirm={(playing) =>
+          void act(async () => {
+            for (const [teamId, ids] of Object.entries(playing)) await matchApi.setPlaying(id, teamId, ids);
+            if (scheduled) await matchApi.start(id);
+          }, scheduled ? "Match is live" : undefined)
+        }
+      />,
+    );
+  }
+
   if (match.status === "SCHEDULED") {
     return wrap(
       <Stage icon={Play} title={`${home(match).name} vs ${away(match).name}`} message={`Scheduled for ${fmt.matchTime(parseDate(match.matchDate))}. Start when the players take the field.`}>
@@ -144,6 +174,23 @@ export default function ScorerPage() {
   const over = thisOver(balls);
 
   const squads: Record<string, Player[]> = { [home(match).id]: homeSquad.data ?? [], [away(match).id]: awaySquad.data ?? [] };
+  // The side's playing players when picked, otherwise its whole squad (older matches).
+  const playingOf = (teamId: string) => {
+    const ids = teamId === home(match).id ? match.homePlaying : match.awayPlaying;
+    const squad = squads[teamId] ?? [];
+    return ids?.length ? ids.map((pid) => squad.find((p) => p.id === pid)).filter(Boolean) as Player[] : squad;
+  };
+  const addMidMatch = async (teamId: string, name: string) => {
+    const before = new Set((squads[teamId] ?? []).map((p) => p.id));
+    const squad = await teamApi.addGuest(teamId, name);
+    queryClient.setQueryData(["team", teamId, "squad"], squad);
+    const added = squad.find((p) => !before.has(p.id));
+    const ids = teamId === home(match).id ? match.homePlaying : match.awayPlaying;
+    if (added && ids?.length) {
+      await matchApi.setPlaying(id, teamId, [...ids, added.id]);
+      await queryClient.invalidateQueries({ queryKey: matchCenterKey(id) });
+    }
+  };
   const nameOf = (pid: string) => Object.values(squads).flat().find((p) => p.id === pid)?.name ?? "Player";
   const ready = !missingRole(innings);
   // After every change, ask for whoever is needed next (openers, new batter, next bowler).
@@ -272,7 +319,7 @@ export default function ScorerPage() {
         open={!!role}
         title={`Pick the ${role === "nonStriker" ? "non-striker" : role ?? ""}`}
         teamName={teamById(match, pickTeamId).name}
-        squad={squads[pickTeamId] ?? []}
+        squad={playingOf(pickTeamId)}
         unavailable={unavailable}
         reason={(p) => (out.has(p.id) ? "Out" : p.id === previousBowler ? "Bowled last over" : "Batting")}
         figures={(p) => {
@@ -290,17 +337,14 @@ export default function ScorerPage() {
           await act(() => matchApi.setLineup(innings.id, r === "striker" ? { strikerId: p.id } : r === "nonStriker" ? { nonStrikerId: p.id } : { bowlerId: p.id }));
           await afterChange();
         }}
-        onAdd={async (name) => {
-          const squad = await teamApi.addGuest(pickTeamId, name);
-          queryClient.setQueryData(["team", pickTeamId, "squad"], squad);
-        }}
+        onAdd={(name) => addMidMatch(pickTeamId, name)}
       />
 
       <PlayerPickerDialog
         open={!!fielderFor}
         title={fielderFor?.type === "CAUGHT" ? "Who took the catch?" : fielderFor?.type === "STUMPED" ? "Who made the stumping?" : "Who ran them out? (close to skip)"}
         teamName={teamById(match, innings.bowlingTeamId).name}
-        squad={squads[innings.bowlingTeamId] ?? []}
+        squad={playingOf(innings.bowlingTeamId)}
         unavailable={new Set()}
         reason={() => ""}
         figures={(p) => (p.id === innings.bowlerId ? (fielderFor?.type === "CAUGHT" ? "Bowler · c & b" : "Bowler") : "")}
@@ -315,10 +359,7 @@ export default function ScorerPage() {
           setFielderFor(null);
           void ball(f.runs, 0, "NONE", f.type, f.out, p.id);
         }}
-        onAdd={async (name) => {
-          const squad = await teamApi.addGuest(innings.bowlingTeamId, name);
-          queryClient.setQueryData(["team", innings.bowlingTeamId, "squad"], squad);
-        }}
+        onAdd={(name) => addMidMatch(innings.bowlingTeamId, name)}
       />
 
       <Dialog open={wicketOpen} onClose={() => setWicketOpen(false)} title="How was the batter out?">
