@@ -51,7 +51,7 @@ export function StartMenu({ open, onClose }: { open: boolean; onClose: () => voi
         </form>
       ) : (
         <div className="stack" style={{ gap: 8 }}>
-          {[...OPTIONS, { icon: QrCode, title: "Join with a code", body: "Got a team invite code? Enter it here", to: "", colors: ["#34D399", "#0E7490"] as [string, string] }].map((o) => (
+          {[...OPTIONS, { icon: QrCode, title: "Join a team", body: "Got a team invite code? Enter it here", to: "", colors: ["#34D399", "#0E7490"] as [string, string] }].map((o) => (
             <button
               key={o.title}
               type="button"

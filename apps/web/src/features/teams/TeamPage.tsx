@@ -6,6 +6,7 @@ import { useNavigate, useParams } from "react-router";
 import { MatchCard, PlayerRow, TournamentRow } from "@/components/cards";
 import { Tabs, TextInput } from "@/components/forms";
 import { Dialog, useAction, useFeedback } from "@/components/overlay";
+import { QrCode } from "@/components/QrCode";
 import { Avatar, Breadcrumbs, Button, ButtonLink, Crest, Empty, ErrorView, Pill, QueryView, SkeletonList } from "@/components/ui";
 import { useSearch } from "@/data/players";
 import { teamApi, useInviteCode, useJoinRequests, useSquad, useTeam, useTeamMatches, useTeamTournaments } from "@/data/teams";
@@ -241,11 +242,16 @@ function InviteDialog({ team, open, onClose }: { team: Team; open: boolean; onCl
   };
   return (
     <Dialog open={open} onClose={onClose} title="Invite players">
-      <p className="muted">Anyone with this link or code joins {team.name} straight away.</p>
+      <p className="muted">Players scan this QR code with their phone camera or the PlayHere app, or use the link or code.</p>
       {code.isError ? (
         <ErrorView error={code.error} onRetry={() => void code.refetch()} />
       ) : (
         <>
+          {link && (
+            <div style={{ display: "grid", placeItems: "center" }}>
+              <QrCode value={link} size={200} label={`QR code to join ${team.name}`} />
+            </div>
+          )}
           <div className="stack" style={{ alignItems: "center", gap: 6, padding: "20px 0", background: "var(--surface-sunken)", borderRadius: 20, border: "1px solid var(--border-strong)" }}>
             <span className="label">Team code</span>
             <span className="num" style={{ fontSize: 40, letterSpacing: "0.2em", color: "var(--brand)" }}>{code.data ?? "······"}</span>
