@@ -112,6 +112,8 @@ export interface BallEvent {
   wicketType: string;
   batsmanId: string | null;
   bowlerId: string | null;
+  /** Set when the dismissed batter was not the striker (a run-out at the other end). */
+  outPlayerId: string | null;
 }
 
 export type TournamentStatus = "DRAFT" | "UPCOMING" | "LIVE" | "COMPLETED" | "CANCELLED";

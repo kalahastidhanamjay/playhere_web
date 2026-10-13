@@ -37,7 +37,8 @@ export function bowlerFigures(balls: BallEvent[], id: string) {
   return { overs: `${Math.floor(legal / 6)}.${legal % 6}`, runs, wickets };
 }
 
-export const dismissed = (balls: BallEvent[]) => new Set(balls.filter(isOut).map((b) => b.batsmanId).filter(Boolean) as string[]);
+/** Batters who are out: the run-out batter when recorded, otherwise the striker. */
+export const dismissed = (balls: BallEvent[]) => new Set(balls.filter(isOut).map((b) => b.outPlayerId ?? b.batsmanId).filter(Boolean) as string[]);
 
 export function missingRole(i: Innings | null): LineupRole | null {
   if (!i) return null;

@@ -35,7 +35,7 @@ export const matchApi = {
   start: (id: string) => api.post(`/matches/${id}/start`),
   openInnings: (id: string, inningsNo: number, battingTeamId: string, bowlingTeamId: string) =>
     api.post(`/matches/${id}/innings`, { inningsNo, battingTeamId, bowlingTeamId }),
-  ball: (inningsId: string, b: { runs: number; extras: number; extraType: string; wicketType: string; outPlayerId?: string }) =>
+  ball: (inningsId: string, b: { runs: number; extras: number; extraType: string; wicketType: string; outPlayerId?: string; fielderId?: string }) =>
     api.post("/matches/innings/ball-event", { inningsId, ...b }),
   setLineup: (inningsId: string, l: { strikerId?: string; nonStrikerId?: string; bowlerId?: string }) =>
     api.put(`/matches/innings/${inningsId}/lineup`, l),

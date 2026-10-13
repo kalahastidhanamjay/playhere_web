@@ -28,6 +28,8 @@ export default function ScorerPage() {
   const [resultOpen, setResultOpen] = useState(false);
   const [picking, setPicking] = useState<LineupRole | null>(null);
   const [runOutOpen, setRunOutOpen] = useState(false);
+  // Catches, stumpings and run-outs ask for the fielder next.
+  const [fielderFor, setFielderFor] = useState<{ type: string; out?: string; runs: number } | null>(null);
   const homeSquad = useSquad(center.data?.match.homeTeam?.id ?? "");
   const awaySquad = useSquad(center.data?.match.awayTeam?.id ?? "");
 
@@ -56,7 +58,33 @@ export default function ScorerPage() {
   );
 
   if (match.status === "COMPLETED") {
-    return wrap(<Empty icon={Trophy} title="Match completed" message={headline(match)} action={<ButtonLink to={`/matches/${id}`}>Back to match</ButtonLink>} />);
+    const last = match.innings.length ? [...match.innings].sort((a, b) => a.inningsNo - b.inningsNo)[match.innings.length - 1] : null;
+    return wrap(
+      <Empty
+        icon={Trophy}
+        title="Match completed"
+        message={headline(match)}
+        action={
+          <div className="row wrap" style={{ justifyContent: "center" }}>
+            <ButtonLink to={`/matches/${id}?tab=scorecard`}>View scorecard</ButtonLink>
+            {last && (
+              <Button
+                variant="secondary"
+                icon={Undo2}
+                loading={busy}
+                onClick={async () => {
+                  if (await confirm({ title: "Undo the last ball?", message: "The match reopens so you can correct it.", confirmLabel: "Undo" })) {
+                    await act(() => matchApi.undo(last.id), "Last ball removed");
+                  }
+                }}
+              >
+                Undo last ball
+              </Button>
+            )}
+          </div>
+        }
+      />,
+    );
   }
 
   if (match.status === "SCHEDULED") {
@@ -124,8 +152,8 @@ export default function ScorerPage() {
     const open = fresh ? currentInnings(fresh.match) : null;
     setPicking(missingRole(open));
   };
-  const ball = async (runs: number, extras = 0, extraType = "NONE", wicketType = "NONE", outPlayerId?: string) => {
-    await act(() => matchApi.ball(innings.id, { runs, extras, extraType, wicketType, outPlayerId }));
+  const ball = async (runs: number, extras = 0, extraType = "NONE", wicketType = "NONE", outPlayerId?: string, fielderId?: string) => {
+    await act(() => matchApi.ball(innings.id, { runs, extras, extraType, wicketType, outPlayerId, fielderId }));
     await afterChange();
   };
   const role = picking ?? null;
@@ -221,7 +249,19 @@ export default function ScorerPage() {
       <Dialog open={runOutOpen} onClose={() => setRunOutOpen(false)} title="Who was run out?">
         <div className="stack" style={{ gap: 8 }}>
           {[innings.strikerId, innings.nonStrikerId].filter(Boolean).map((pid) => (
-            <Button key={pid} variant="secondary" block onClick={() => { setRunOutOpen(false); void ball(0, 0, "NONE", "RUN_OUT", pid!); }}>
+            <Button
+              key={pid}
+              variant="secondary"
+              block
+              onClick={() => {
+                setRunOutOpen(false);
+                setPicker({
+                  title: "Runs completed before the run-out",
+                  options: [0, 1, 2, 3].map((n) => ({ value: n, label: n === 1 ? "1 run" : `${n} runs` })),
+                  onPick: (n) => setFielderFor({ type: "RUN_OUT", out: pid!, runs: n }),
+                });
+              }}
+            >
               {nameOf(pid!)}
             </Button>
           ))}
@@ -256,10 +296,40 @@ export default function ScorerPage() {
         }}
       />
 
+      <PlayerPickerDialog
+        open={!!fielderFor}
+        title={fielderFor?.type === "CAUGHT" ? "Who took the catch?" : fielderFor?.type === "STUMPED" ? "Who made the stumping?" : "Who ran them out? (close to skip)"}
+        teamName={teamById(match, innings.bowlingTeamId).name}
+        squad={squads[innings.bowlingTeamId] ?? []}
+        unavailable={new Set()}
+        reason={() => ""}
+        figures={(p) => (p.id === innings.bowlerId ? (fielderFor?.type === "CAUGHT" ? "Bowler · c & b" : "Bowler") : "")}
+        onClose={() => {
+          // A run-out can be saved without a fielder; a catch or stumping cannot.
+          const f = fielderFor;
+          setFielderFor(null);
+          if (f?.type === "RUN_OUT") void ball(f.runs, 0, "NONE", "RUN_OUT", f.out);
+        }}
+        onPick={(p) => {
+          const f = fielderFor!;
+          setFielderFor(null);
+          void ball(f.runs, 0, "NONE", f.type, f.out, p.id);
+        }}
+        onAdd={async (name) => {
+          const squad = await teamApi.addGuest(innings.bowlingTeamId, name);
+          queryClient.setQueryData(["team", innings.bowlingTeamId, "squad"], squad);
+        }}
+      />
+
       <Dialog open={wicketOpen} onClose={() => setWicketOpen(false)} title="How was the batter out?">
         <div className="chips">
           {WICKET_TYPES.map((w) => (
-            <button key={w} type="button" className="chip" style={{ height: 46 }} onClick={() => { setWicketOpen(false); if (w === "RUN_OUT") setRunOutOpen(true); else void ball(0, 0, "NONE", w); }}>
+            <button key={w} type="button" className="chip" style={{ height: 46 }} onClick={() => {
+                setWicketOpen(false);
+                if (w === "RUN_OUT") setRunOutOpen(true);
+                else if (w === "CAUGHT" || w === "STUMPED") setFielderFor({ type: w, runs: 0 });
+                else void ball(0, 0, "NONE", w);
+              }}>
               {fmt.label(w)}
             </button>
           ))}
