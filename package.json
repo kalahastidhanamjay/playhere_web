@@ -1,0 +1,20 @@
+{
+  "name": "playhere-web",
+  "private": true,
+  "description": "PlayHere web app (apps/web) and its shared brand package (packages/brand).",
+  "packageManager": "pnpm@10.34.6",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @playhere/web dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "preview": "pnpm --filter @playhere/web preview"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}

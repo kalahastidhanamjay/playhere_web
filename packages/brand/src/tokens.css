@@ -1,0 +1,113 @@
+/*
+ * PlayHere brand tokens, shared by the web app and the landing page.
+ * Mirrors the Flutter design system (lib/src/design_system/tokens/app_colors.dart).
+ * Dark-first: bare :root is the night palette; light is opt-in via data-theme or OS preference.
+ */
+:root {
+  --ph-blaze: #ff6b2c;
+  --ph-blaze-light: #ff9a4d;
+  --ph-coral: #ff3d5a;
+  --ph-violet: #7c5cff;
+  --ph-indigo: #4f46e5;
+  --ph-cyan: #22c3ee;
+  --ph-gold: #f5c451;
+
+  --bg: #0a0f1c;
+  --surface: #0f1526;
+  --surface-raised: #151c31;
+  --surface-sunken: #060911;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --text: #f4f6fb;
+  --text-2: #a6afc6;
+  --text-3: #6c7692;
+  --brand: var(--ph-blaze);
+  --on-brand: #ffffff;
+  --brand-soft: rgba(255, 107, 44, 0.15);
+  --accent: var(--ph-violet);
+  --accent-soft: rgba(124, 92, 255, 0.16);
+  --live: #ff375f;
+  --live-soft: rgba(255, 55, 95, 0.16);
+  --success: #34d399;
+  --success-soft: rgba(52, 211, 153, 0.15);
+  --warning: #f5b83d;
+  --warning-soft: rgba(245, 184, 61, 0.15);
+  --danger: #ff5a6e;
+  --danger-soft: rgba(255, 90, 110, 0.15);
+  --info: var(--ph-cyan);
+  --info-soft: rgba(34, 195, 238, 0.15);
+  --shadow: rgba(0, 0, 0, 0.4);
+  --glow: rgba(255, 107, 44, 0.33);
+  --brand-gradient: linear-gradient(135deg, var(--ph-blaze-light) 0%, var(--ph-blaze) 45%, var(--ph-coral) 100%);
+  --hero-gradient: linear-gradient(135deg, #241a4f 0%, #14183a 50%, #0b1426 100%);
+
+  --font-body: "Plus Jakarta Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-score: "Space Grotesk", "Plus Jakarta Sans", ui-monospace, sans-serif;
+
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f4f5f9;
+    --surface: #ffffff;
+    --surface-raised: #ffffff;
+    --surface-sunken: #eceef5;
+    --border: #e5e8f0;
+    --border-strong: #d3d8e4;
+    --text: #0b1020;
+    --text-2: #4a5371;
+    --text-3: #8a93aa;
+    --brand: #f2591c;
+    --brand-soft: rgba(242, 89, 28, 0.1);
+    --accent: var(--ph-indigo);
+    --accent-soft: rgba(79, 70, 229, 0.1);
+    --live: #e11d48;
+    --live-soft: rgba(225, 29, 72, 0.1);
+    --success: #059669;
+    --success-soft: rgba(5, 150, 105, 0.1);
+    --warning: #d97706;
+    --warning-soft: rgba(217, 119, 6, 0.1);
+    --danger: #dc2626;
+    --danger-soft: rgba(220, 38, 38, 0.1);
+    --info: #0891b2;
+    --info-soft: rgba(8, 145, 178, 0.1);
+    --shadow: rgba(16, 24, 40, 0.1);
+    --glow: rgba(242, 89, 28, 0.25);
+    color-scheme: light;
+  }
+}
+
+:root[data-theme="light"] {
+  --bg: #f4f5f9;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-sunken: #eceef5;
+  --border: #e5e8f0;
+  --border-strong: #d3d8e4;
+  --text: #0b1020;
+  --text-2: #4a5371;
+  --text-3: #8a93aa;
+  --brand: #f2591c;
+  --brand-soft: rgba(242, 89, 28, 0.1);
+  --accent: var(--ph-indigo);
+  --accent-soft: rgba(79, 70, 229, 0.1);
+  --live: #e11d48;
+  --live-soft: rgba(225, 29, 72, 0.1);
+  --success: #059669;
+  --success-soft: rgba(5, 150, 105, 0.1);
+  --warning: #d97706;
+  --warning-soft: rgba(217, 119, 6, 0.1);
+  --danger: #dc2626;
+  --danger-soft: rgba(220, 38, 38, 0.1);
+  --info: #0891b2;
+  --info-soft: rgba(8, 145, 178, 0.1);
+  --shadow: rgba(16, 24, 40, 0.1);
+  --glow: rgba(242, 89, 28, 0.25);
+  color-scheme: light;
+}

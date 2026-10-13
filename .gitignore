@@ -1,0 +1,9 @@
+node_modules
+dist
+*.local
+.env*.local
+.vite
+*.tsbuildinfo
+
+# The marketing landing page lives in its own repository.
+apps/landing/
