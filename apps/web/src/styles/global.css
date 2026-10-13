@@ -283,6 +283,8 @@ p { margin: 0; }
 .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 4px; gap: 4px; border-radius: var(--radius-md); background: var(--surface-sunken); border: 1px solid var(--border); }
 .seg button { height: 36px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--text-3); font-weight: 700; font-size: 13.5px; cursor: pointer; }
 .seg button[aria-selected="true"] { background: var(--surface-raised); color: var(--text); box-shadow: 0 3px 10px -4px var(--shadow); }
+.seg-sm { padding: 2px; flex: none; }
+.seg-sm button { height: 28px; padding: 0 10px; font-size: 12.5px; }
 .tabs { display: flex; gap: 22px; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
 .tabs button { padding: 12px 0; border: 0; background: none; color: var(--text-3); font-weight: 700; font-size: 14.5px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
 .tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--brand); }

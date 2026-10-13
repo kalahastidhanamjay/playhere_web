@@ -14,11 +14,12 @@ import { teamApi, useSquad } from "@/data/teams";
 import { batterFigures, bowlerFigures, dismissed, LineupPanel, missingRole, PlayerPickerDialog, type LineupRole } from "./Lineup";
 import { AwardsSection } from "./Awards";
 import { PlayingSquadsStep } from "./PlayingSquads";
-import { PointsScorer } from "./PointsScorer";
+import { LiveScorer } from "./LiveScorer";
 
 type Picker = { title: string; options: { value: number; label: string }[]; onPick: (n: number) => void } | null;
 
-/** Live scoring for the match's scorer (friendly creator or tournament organiser): ball by ball for cricket, taps for other sports. */
+/** Live scoring for the match's scorer (friendly creator or tournament organiser): ball by ball for cricket;
+ *  for other sports a clock, goals/points with the player, cards, substitutions, extra time and penalties. */
 export default function ScorerPage() {
   const { id = "" } = useParams();
   const queryClient = useQueryClient();
@@ -70,6 +71,20 @@ export default function ScorerPage() {
         action={
           <div className="row wrap" style={{ justifyContent: "center" }}>
             <ButtonLink to={`/matches/${id}?tab=scorecard`}>View scorecard</ButtonLink>
+            {!isCricket(match.sportType) && (center.data.live?.events.length ?? 0) > 0 && (
+              <Button
+                variant="secondary"
+                icon={Undo2}
+                loading={busy}
+                onClick={async () => {
+                  if (await confirm({ title: "Undo the last event?", message: "The match reopens so you can correct it.", confirmLabel: "Undo" })) {
+                    await act(() => matchApi.undoPoints(id), "Last event removed");
+                  }
+                }}
+              >
+                Undo last event
+              </Button>
+            )}
             {last && (
               <Button
                 variant="secondary"
@@ -87,15 +102,19 @@ export default function ScorerPage() {
           </div>
         }
       />
-      {isCricket(match.sportType) && <AwardsSection matchId={id} canEdit />}
+      <AwardsSection matchId={id} canEdit />
       </div>,
     );
   }
 
   const squadsByTeam: Record<string, Player[]> = { [home(match).id]: homeSquad.data ?? [], [away(match).id]: awaySquad.data ?? [] };
   const hasPlaying = (match.homePlaying?.length ?? 0) > 0 && (match.awayPlaying?.length ?? 0) > 0;
-  // Cricket: pick who plays for each side before the toss (also for matches started without it).
-  if (isCricket(match.sportType) && match.innings.length === 0 && (match.status === "SCHEDULED" || !hasPlaying)) {
+  const cricket = isCricket(match.sportType);
+  // Pick who plays for each side before the toss / kick-off (also for matches started without it).
+  const needSquads = cricket
+    ? match.innings.length === 0 && (match.status === "SCHEDULED" || !hasPlaying)
+    : match.status === "SCHEDULED" || (!hasPlaying && (center.data.live?.events.length ?? 0) === 0);
+  if (needSquads) {
     const scheduled = match.status === "SCHEDULED";
     // Wait for both squads so the ticks start from the full lists.
     if (!homeSquad.data || !awaySquad.data) return wrap(<SkeletonList count={2} height={220} />);
@@ -104,16 +123,16 @@ export default function ScorerPage() {
         match={match}
         squads={squadsByTeam}
         busy={busy}
-        actionLabel={scheduled ? "Start match" : "Continue to the toss"}
+        actionLabel={scheduled ? "Start match" : cricket ? "Continue to the toss" : "Continue"}
         onAdd={async (teamId, name) => {
           const before = new Set((squadsByTeam[teamId] ?? []).map((p) => p.id));
           const squad = await teamApi.addGuest(teamId, name);
           queryClient.setQueryData(["team", teamId, "squad"], squad);
           return squad.find((p) => !before.has(p.id)) ?? null;
         }}
-        onConfirm={(playing) =>
+        onConfirm={(playing, bench) =>
           void act(async () => {
-            for (const [teamId, ids] of Object.entries(playing)) await matchApi.setPlaying(id, teamId, ids);
+            for (const [teamId, ids] of Object.entries(playing)) await matchApi.setPlaying(id, teamId, ids, bench[teamId] ?? []);
             if (scheduled) await matchApi.start(id);
           }, scheduled ? "Match is live" : undefined)
         }
@@ -129,8 +148,9 @@ export default function ScorerPage() {
     );
   }
 
-  if (!isCricket(match.sportType)) {
-    return wrap(<PointsScorer match={match} points={center.data.points} busy={busy} act={act} />);
+  if (!cricket) {
+    if (!center.data.live) return wrap(<SkeletonList count={3} height={140} />);
+    return wrap(<LiveScorer match={match} live={center.data.live} squads={squadsByTeam} busy={busy} act={act} />);
   }
 
   if (!innings) {

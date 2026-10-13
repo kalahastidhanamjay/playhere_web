@@ -59,8 +59,19 @@ export interface Match {
   homeTeam: TeamRef | null;
   awayTeam: TeamRef | null;
   winnerTeamId: string | null;
-  /** Server-written result, e.g. "Tigers won by 4 wickets" (cricket). */
+  /** Server-written result, e.g. "Tigers won by 4 wickets" or "Lions won on penalties (4–3) after 1–1". */
   result: string | null;
+  /** REGULAR, EXTRA_TIME or SHOOTOUT (sports other than cricket). */
+  phase?: string;
+  periodMinutes?: number | null;
+  /** UP (minutes played), DOWN (time left) or NONE. */
+  clockDirection?: string;
+  clockRunning?: boolean;
+  clockSeconds?: number;
+  shootoutHome?: number | null;
+  shootoutAway?: number | null;
+  /** Tennis: the current game, e.g. "30–15". */
+  gameLabel?: string | null;
   /** Players each side fields today; empty when not picked. */
   homePlaying: string[];
   awayPlaying: string[];
@@ -83,6 +94,53 @@ export interface PointEvent {
   playerName: string | null;
   label: string | null;
   createdAt: string | null;
+}
+
+/** GET /matches/{id}/live: clock, events and who is on the field (sports other than cricket). */
+export interface LiveState {
+  phase: string;
+  period: number;
+  clock: { direction: string; running: boolean; seconds: number; periodSeconds: number };
+  /** Oldest first. */
+  events: LiveEvent[];
+  sides: Record<string, LiveSide>;
+  shootoutHome: number;
+  shootoutAway: number;
+  gameLabel: string | null;
+  /** Set on arrival, to run the clock locally between refreshes. */
+  fetchedAt: number;
+}
+
+export interface LiveEvent {
+  id: string;
+  type: string;
+  label: string;
+  /** The side credited (for an own goal, the side that benefits). */
+  teamId: string;
+  playerId: string | null;
+  playerName: string | null;
+  relatedPlayerId: string | null;
+  relatedName: string | null;
+  points: number;
+  period: number;
+  phase: string;
+  /** "23'", "45+2'", "Q3 04:21". */
+  time: string | null;
+  note: string | null;
+}
+
+export interface LiveSide {
+  onField: string[];
+  bench: string[];
+  sentOff: string[];
+  yellow: string[];
+  fouls: Record<string, number>;
+  fouledOut: string[];
+  periodFouls: number;
+  timeouts: number;
+  /** Kabaddi: after two empty raids the next raid must score. */
+  doOrDie: boolean;
+  all: string[];
 }
 
 /** GET /matches/{id}/awards */

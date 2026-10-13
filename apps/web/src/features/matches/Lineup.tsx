@@ -90,6 +90,8 @@ export function PlayerPickerDialog({
   onClose,
   onPick,
   onAdd,
+  skipLabel,
+  onSkip,
 }: {
   open: boolean;
   title: string;
@@ -101,6 +103,9 @@ export function PlayerPickerDialog({
   onClose: () => void;
   onPick: (p: Player) => void;
   onAdd: (name: string) => Promise<void>;
+  /** An optional "none" choice, e.g. "No assist". */
+  skipLabel?: string;
+  onSkip?: () => void;
 }) {
   const [name, setName] = useState("");
   const [adding, setAdding] = useState(false);
@@ -109,6 +114,9 @@ export function PlayerPickerDialog({
   return (
     <Dialog open={open} onClose={onClose} title={title}>
       <p className="faint small" style={{ marginTop: -8 }}>{teamName}</p>
+      {skipLabel && onSkip && (
+        <Button variant="secondary" block onClick={onSkip} style={{ marginBottom: 8 }}>{skipLabel}</Button>
+      )}
       <form
         className="row"
         onSubmit={async (e) => {

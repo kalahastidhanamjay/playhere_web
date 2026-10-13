@@ -1,3 +1,4 @@
+import { liveRulesFor } from "@/domain/live";
 import { useQueryClient } from "@tanstack/react-query";
 import { MapPin, Plus, Search } from "lucide-react";
 import { useState, type CSSProperties } from "react";
@@ -31,6 +32,9 @@ export default function QuickMatchPage() {
   const [away, setAway] = useState<Side>({});
   const [overs, setOvers] = useState(10);
   const [periods, setPeriods] = useState(sport.defaultPeriods);
+  /** Minutes per half / quarter for timed sports (local games are often shorter). */
+  const [minutes, setMinutes] = useState(liveRulesFor(sport).periodMinutes);
+  const timed = liveRulesFor(sport).clock !== "NONE";
   const [venue, setVenue] = useState("");
   const [picking, setPicking] = useState<"home" | "away" | null>(null);
   const [run, loading] = useAction();
@@ -50,6 +54,7 @@ export default function QuickMatchPage() {
         sportType: sport.id,
         oversPerSide: sport.scoring === "INNINGS" ? overs : undefined,
         periods: sport.scoring === "INNINGS" ? undefined : periods,
+        periodMinutes: timed ? minutes : undefined,
         venue: venue.trim() || undefined,
       });
       id = m.id;
@@ -70,6 +75,7 @@ export default function QuickMatchPage() {
           onChange={([id]) => {
             const next = sportOf(id);
             setSportId(next.id);
+            setMinutes(liveRulesFor(next).periodMinutes);
             setPeriods(next.defaultPeriods);
             // Teams belong to one sport, so a new sport clears picked teams.
             setHome((s) => (s.team ? {} : s));
@@ -89,6 +95,17 @@ export default function QuickMatchPage() {
             <div className="chips">
               {sport.periodChoices.map((n) => (
                 <button key={n} type="button" className="chip" aria-pressed={periods === n} onClick={() => setPeriods(n)}>{n}</button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {timed && (
+          <div className="field">
+            <span>Minutes per {sport.period.toLowerCase()}</span>
+            <div className="chips">
+              {liveRulesFor(sport).minuteChoices.map((n) => (
+                <button key={n} type="button" className="chip" aria-pressed={minutes === n} onClick={() => setMinutes(n)}>{n}</button>
               ))}
             </div>
           </div>

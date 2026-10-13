@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { currentInnings, sortedInnings } from "@/domain/cricket";
-import type { BallEvent, Innings, Match, MatchAwards, PointEvent, ScorecardData } from "@/domain/models";
+import type { BallEvent, Innings, LiveState, Match, MatchAwards, PointEvent, ScorecardData } from "@/domain/models";
 import { isCricket } from "@/domain/sports";
 import { api } from "@/lib/api";
 import { useUserId } from "@/lib/session";
@@ -24,8 +24,18 @@ export const matchApi = {
     sportType: string;
     oversPerSide?: number;
     periods?: number;
+    periodMinutes?: number;
     venue?: string;
   }) => api.post<Match>("/matches", body),
+  liveState: async (id: string): Promise<LiveState> => ({ ...(await api.get<Omit<LiveState, "fetchedAt">>(`/matches/${id}/live`)), fetchedAt: Date.now() }),
+  /** A goal, card, substitution, raid, foul, point… teamId is the player's own team (also for an own goal). */
+  event: (id: string, e: { type: string; teamId: string; playerId?: string; relatedPlayerId?: string; points?: number }) =>
+    api.post(`/matches/${id}/events`, e),
+  clock: (id: string, action: "start" | "pause") => api.post(`/matches/${id}/clock/${action}`),
+  extraTime: (id: string) => api.post(`/matches/${id}/extra-time`),
+  shootout: (id: string) => api.post(`/matches/${id}/shootout`),
+  /** Adds one squad player mid-match without touching the rest of the side. */
+  addPlaying: (id: string, teamId: string, playerId: string, bench: boolean) => api.post(`/matches/${id}/playing/add`, { teamId, playerId, bench }),
   awards: (id: string) => api.get<MatchAwards>(`/matches/${id}/awards`),
   /** Pass null to go back to the suggested player. */
   choosePlayerOfMatch: (id: string, playerId: string | null) => api.put(`/matches/${id}/player-of-match`, { playerId }),
@@ -36,7 +46,8 @@ export const matchApi = {
   undoPoints: (id: string) => api.del<Match>(`/matches/${id}/points/last`),
   nextPeriod: (id: string) => api.post<Match>(`/matches/${id}/period/next`),
   start: (id: string) => api.post(`/matches/${id}/start`),
-  setPlaying: (id: string, teamId: string, playerIds: string[]) => api.put(`/matches/${id}/playing`, { teamId, playerIds }),
+  setPlaying: (id: string, teamId: string, playerIds: string[], benchIds: string[] = []) =>
+    api.put(`/matches/${id}/playing`, { teamId, playerIds, benchIds }),
   openInnings: (id: string, inningsNo: number, battingTeamId: string, bowlingTeamId: string) =>
     api.post(`/matches/${id}/innings`, { inningsNo, battingTeamId, bowlingTeamId }),
   ball: (inningsId: string, b: { runs: number; extras: number; extraType: string; wicketType: string; outPlayerId?: string; fielderId?: string }) =>
@@ -67,18 +78,20 @@ export interface MatchCenter {
   balls: BallEvent[];
   /** Scoring events for sports other than cricket. */
   points: PointEvent[];
+  /** Sports other than cricket: clock, events, who is on the field. */
+  live: LiveState | null;
 }
 
 async function loadCenter(id: string): Promise<MatchCenter> {
   const match = await matchApi.byId(id);
   if (!isCricket(match.sportType)) {
-    const points = match.status === "SCHEDULED" ? [] : await matchApi.points(id);
-    return { match, focus: null, balls: [], points };
+    const live = match.status === "SCHEDULED" ? null : await matchApi.liveState(id);
+    return { match, focus: null, balls: [], points: [], live };
   }
   const list = sortedInnings(match);
   const focus = currentInnings(match) ?? (list.length ? list[list.length - 1] : null);
   const balls = focus ? await matchApi.balls(focus.id) : [];
-  return { match, focus, balls, points: [] };
+  return { match, focus, balls, points: [], live: null };
 }
 
 export const matchCenterKey = (id: string) => ["match-center", id] as const;

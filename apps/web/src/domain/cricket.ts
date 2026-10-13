@@ -1,3 +1,4 @@
+import { livePeriodLabel } from "./live";
 import { fmt, parseDate } from "@/lib/format";
 import type { Account, BallEvent, Innings, Match, Player, TeamRef } from "./models";
 import { isCricket, sportOf } from "./sports";
@@ -52,6 +53,8 @@ function pointsHeadline(m: Match): string {
   const a = m.awayScore ?? 0;
   const line = `${Math.max(h, a)}–${Math.min(h, a)}`;
   const sets = sport.scoring === "SETS" ? ` (${sport.period.toLowerCase()}s)` : "";
+  if (m.status === "COMPLETED" && m.result) return m.result;
+  if (m.status === "LIVE" && m.phase === "SHOOTOUT") return `Penalties ${m.shootoutHome ?? 0}–${m.shootoutAway ?? 0} (level ${h}–${a})`;
   if (m.status === "COMPLETED") {
     if (!m.winnerTeamId) return sport.scoring === "SETS" ? `Match tied ${h}–${a}` : `Draw ${h}–${a}`;
     return `${teamById(m, m.winnerTeamId).name} won ${line}${sets}`;
@@ -61,9 +64,9 @@ function pointsHeadline(m: Match): string {
     const state = leader ? `${leader.name} lead ${line}${sets}` : `Level ${h}–${a}`;
     if (sport.scoring === "SETS") {
       const cur = m.periods?.find((p) => p.period === m.currentPeriod);
-      return `${periodName(m)} · ${cur ? `${cur.home}–${cur.away}` : "0–0"} · ${state}`;
+      return `${livePeriodLabel(m)} · ${cur ? `${cur.home}–${cur.away}` : "0–0"} · ${state}`;
     }
-    return `${periodName(m)} · ${state}`;
+    return `${livePeriodLabel(m)} · ${state}`;
   }
   if (m.status === "ABANDONED") return "Match abandoned";
   return fmt.matchTime(parseDate(m.matchDate));

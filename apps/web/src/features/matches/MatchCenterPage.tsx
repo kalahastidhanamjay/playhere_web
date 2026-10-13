@@ -8,10 +8,13 @@ import { Tabs } from "@/components/forms";
 import { AwardsSection } from "./Awards";
 import { Scorecard } from "./Scorecard";
 import { SportTag } from "@/components/sport";
-import { away, canScore, chase, formatLabel, matchContext, groupByOver, headline, home, inningsFor, periodName, score, sideScore, sortedInnings, stageLabel, teamById, thisOver } from "@/domain/cricket";
-import type { Innings, Match, TeamRef } from "@/domain/models";
+import { away, canScore, chase, formatLabel, matchContext, groupByOver, headline, home, inningsFor, score, sideScore, sortedInnings, stageLabel, teamById, thisOver } from "@/domain/cricket";
+import type { Innings, LiveState, Match, TeamRef } from "@/domain/models";
 import { isCricket, sportOf } from "@/domain/sports";
-import { PeriodTable, Timeline } from "./PointsScorer";
+import { PeriodTable } from "./PointsScorer";
+import { GoalScorers, LiveClockLine, LiveLineups, LiveTimeline } from "./LiveScorer";
+import { livePeriodLabel } from "@/domain/live";
+import { useSquad } from "@/data/teams";
 import { fmt, parseDate } from "@/lib/format";
 import { useUserId } from "@/lib/session";
 
@@ -26,7 +29,7 @@ export default function MatchCenterPage() {
   return (
     <div className="page">
       <QueryView query={query} loading={<SkeletonList count={3} height={180} />}>
-        {({ match, focus, balls, points }) => {
+        {({ match, focus, balls, live }) => {
           const cricket = isCricket(match.sportType);
           const ch = chase(match, focus);
           const scorer = canScore(match, userId) && match.status !== "COMPLETED";
@@ -48,7 +51,7 @@ export default function MatchCenterPage() {
                 <div className="row spread">
                   <StatusPill status={match.status} />
                   <span className="row small muted" style={{ "--gap": "8px" } as CSSProperties}>
-                    {!cricket && match.status === "LIVE" ? periodName(match) : stageLabel(match)}
+                    {!cricket && match.status === "LIVE" ? livePeriodLabel(match, live?.phase, live?.period) : stageLabel(match)}
                     <SportTag sport={match.sportType} />
                   </span>
                 </div>
@@ -57,6 +60,8 @@ export default function MatchCenterPage() {
                   <span className="label" style={{ color: "rgba(255,255,255,.4)", letterSpacing: "0.3em", marginTop: 22 }}>VS</span>
                   <Side match={match} team={away(match)} innings={inningsFor(match, away(match).id)} winner={match.winnerTeamId === away(match).id} />
                 </div>
+                {live && match.status === "LIVE" && <LiveClockLine match={match} live={live} />}
+                {live && <GoalScorers match={match} live={live} />}
                 <div style={{ background: "rgba(255,255,255,.08)", borderRadius: 14, padding: "12px 16px", textAlign: "center", fontWeight: 700 }}>
                   {headline(match)}
                 </div>
@@ -87,10 +92,18 @@ export default function MatchCenterPage() {
                 </Section>
               )}
 
-              {!cricket && points.length > 0 && (
+              {!cricket && match.status === "COMPLETED" && <AwardsSection matchId={match.id} canEdit={canScore(match, userId)} />}
+
+              {live && live.events.length > 0 && (
                 <Section title="Match events">
-                  <Timeline match={match} points={points} />
+                  <LiveTimeline match={match} live={live} />
                 </Section>
+              )}
+
+              {live && (
+                <div style={{ marginTop: 24 }}>
+                  <SideLineups match={match} live={live} />
+                </div>
               )}
 
               {cricket && (
@@ -226,4 +239,11 @@ function InningsRow({ team, innings }: { team: TeamRef; innings: Innings }) {
       {!innings.completed && <span className="live-dot" style={{ color: "var(--live)" }} aria-label="In progress" />}
     </div>
   );
+}
+
+/** Lineups need both squads for names and photos. */
+function SideLineups({ match, live }: { match: Match; live: LiveState }) {
+  const h = useSquad(match.homeTeam?.id ?? "");
+  const a = useSquad(match.awayTeam?.id ?? "");
+  return <LiveLineups match={match} live={live} squads={{ [home(match).id]: h.data ?? [], [away(match).id]: a.data ?? [] }} />;
 }
