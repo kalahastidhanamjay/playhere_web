@@ -1,8 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, UserPlus } from "lucide-react";
+import { Check, Ticket, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-import { Button, ButtonLink, Crest, ErrorView, SkeletonList } from "@/components/ui";
+import { Button, ButtonLink, Crest, Empty, ErrorView, SkeletonList } from "@/components/ui";
 import { teamApi, useInvitePreview } from "@/data/teams";
 import { ApiError } from "@/lib/api";
 import { useSession } from "@/lib/session";
@@ -38,7 +38,23 @@ export default function JoinTeamPage() {
     }
   }
 
-  if (preview.isError) return <div className="page page-narrow"><ErrorView error={preview.error} /></div>;
+  if (preview.isError) {
+    const err = ApiError.from(preview.error);
+    // A mistyped code or an old QR: say so plainly rather than "Something went wrong".
+    if (err.kind === "validation" || err.kind === "notFound") {
+      return (
+        <div className="page page-narrow">
+          <Empty
+            icon={Ticket}
+            title="This invite isn't valid"
+            message={`No team uses the code ${code.toUpperCase()}. Check it with your captain, or ask them to share the invite again.`}
+            action={<ButtonLink to="/">Go to PlayHere</ButtonLink>}
+          />
+        </div>
+      );
+    }
+    return <div className="page page-narrow"><ErrorView error={preview.error} onRetry={() => void preview.refetch()} /></div>;
+  }
   if (!preview.data) return <div className="page page-narrow"><SkeletonList count={2} height={160} /></div>;
   const team = preview.data;
 

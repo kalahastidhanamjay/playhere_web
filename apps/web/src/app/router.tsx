@@ -4,9 +4,33 @@ import { ErrorView, SkeletonList } from "@/components/ui";
 import { useSession } from "@/lib/session";
 import { AppShell } from "./AppShell";
 
+const RELOADED_KEY = "ph.reloaded-for-new-version";
+
+/**
+ * After a new deploy, a tab opened earlier asks for page files that no longer exist.
+ * Reload once onto the new version instead of showing an error; give up if that already happened.
+ */
+export function reloadForNewVersion(): boolean {
+  try {
+    const last = Number(sessionStorage.getItem(RELOADED_KEY) ?? 0);
+    if (Date.now() - last < 30_000) return false;
+    sessionStorage.setItem(RELOADED_KEY, String(Date.now()));
+  } catch {
+    // Storage blocked: still try a single reload.
+  }
+  window.location.reload();
+  return true;
+}
+
 /** Code-split each page; most visitors only ever open one or two. */
 function page(load: () => Promise<{ default: ComponentType }>) {
-  const Component = lazy(load);
+  const Component = lazy(() =>
+    load().catch((error: unknown) => {
+      // Never resolves when reloading, so the user sees the loading skeleton, then the new version.
+      if (reloadForNewVersion()) return new Promise<{ default: ComponentType }>(() => {});
+      throw error;
+    }),
+  );
   return (
     <Suspense
       fallback={

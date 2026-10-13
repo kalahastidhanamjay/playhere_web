@@ -39,7 +39,8 @@ export const socialApi = {
   rejectOffer: (id: string) => api.post(`/contracts/${id}/reject`),
   offer: (body: { playerId: string; teamId: string; offerAmount: number; startDate: string; endDate: string }) =>
     api.post("/contracts/offer", body),
-  opportunities: () => api.get<Opportunity[]>("/opportunities"),
+  /** Public: guests can browse trials too. */
+  opportunities: () => api.get<Opportunity[]>("/discovery/opportunities"),
   applications: () => api.get<OpportunityApplication[]>("/opportunities/applications/my"),
   apply: (id: string, message?: string) => api.post(`/opportunities/${id}/apply`, { message }),
   venues: (city?: string) => api.get<Venue[]>("/venues", { location: city }),
