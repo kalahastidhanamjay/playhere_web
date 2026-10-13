@@ -1,7 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { currentInnings, sortedInnings } from "@/domain/cricket";
-import type { BallEvent, Innings, Match, PointEvent } from "@/domain/models";
+import type { BallEvent, Innings, Match, PointEvent, ScorecardData } from "@/domain/models";
 import { isCricket } from "@/domain/sports";
 import { api } from "@/lib/api";
 import { useUserId } from "@/lib/session";
@@ -26,6 +26,7 @@ export const matchApi = {
     periods?: number;
     venue?: string;
   }) => api.post<Match>("/matches", body),
+  scorecard: (id: string) => api.get<ScorecardData>(`/matches/${id}/scorecard`),
   points: (id: string) => api.get<PointEvent[]>(`/matches/${id}/points`),
   addPoints: (id: string, teamId: string, points: number, label?: string, playerName?: string) =>
     api.post<Match>(`/matches/${id}/points`, { teamId, points, label, playerName: playerName || undefined }),
@@ -85,8 +86,12 @@ export function useMatchCenter(id: string, { live = true } = {}) {
     queryFn: () => loadCenter(id),
     refetchInterval: (q) => (live && q.state.data?.match.status !== "COMPLETED" ? 20_000 : false),
   });
+  const queryClient = useQueryClient();
   const refetch = useRef(query.refetch);
-  refetch.current = query.refetch;
+  refetch.current = () => {
+    void queryClient.invalidateQueries({ queryKey: ["scorecard", id] });
+    return query.refetch();
+  };
   const finished = query.data?.match.status === "COMPLETED";
   useEffect(() => {
     if (!live || finished) return;
@@ -94,3 +99,7 @@ export function useMatchCenter(id: string, { live = true } = {}) {
   }, [id, live, finished]);
   return query;
 }
+
+/** Full cricket scorecard; refreshed with the match centre while the match is live. */
+export const useScorecard = (id: string, enabled: boolean, live: boolean) =>
+  useQuery({ queryKey: ["scorecard", id], queryFn: () => matchApi.scorecard(id), enabled, refetchInterval: live ? 20_000 : false });

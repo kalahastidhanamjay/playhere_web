@@ -19,7 +19,7 @@ export default function RegisterPage() {
   return (
     <AuthLayout
       title="Join PlayHere"
-      subtitle="One free account for playing, organising and following local sport."
+      subtitle="One free account for playing, organising and following the sports you love."
       footer={
         <p className="muted" style={{ textAlign: "center" }}>
           Already have an account? <Link className="link" to="/login">Sign in</Link>

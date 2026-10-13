@@ -38,6 +38,7 @@ async function refreshAccessToken(): Promise<boolean> {
       if (!refreshToken) return false;
       const res = await fetch(`${config.apiUrl}/auth/token/refresh?refreshToken=${encodeURIComponent(refreshToken)}`, {
         method: "POST",
+        headers: { "ngrok-skip-browser-warning": "true" },
       });
       if (!res.ok) return false;
       const data = (await res.json()) as { accessToken: string; refreshToken?: string };
@@ -87,7 +88,8 @@ function errorFor(status: number, body: unknown): ApiError {
 async function send<T>(method: string, path: string, opts: RequestOptions = {}, retried = false, anonymous = false): Promise<T> {
   const isPublicAuthCall = path.startsWith("/auth/") && !path.startsWith("/auth/account");
   const token = anonymous || isPublicAuthCall ? null : storage.accessToken();
-  const headers: Record<string, string> = {};
+  // ngrok's free plan answers browsers with a warning page instead of the API unless this header is sent.
+  const headers: Record<string, string> = { "ngrok-skip-browser-warning": "true" };
   if (token) headers.Authorization = `Bearer ${token}`;
   let body: BodyInit | undefined;
   if (opts.body !== undefined) {

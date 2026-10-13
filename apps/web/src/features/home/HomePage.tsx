@@ -28,8 +28,8 @@ export default function HomePage() {
         <header className="home-head">
           <div className="stack" style={{ gap: 4 }}>
             <span className="faint">{greeting()}{s ? ` · ${s.name}` : ""}</span>
-            <h1>{account ? firstName(account) : "Every local game, live."}</h1>
-            {!account && <p className="muted">Cricket, football, kabaddi, badminton and more. Follow matches near you, or sign in to score your own.</p>}
+            <h1>{account ? firstName(account) : "Every game, every sport, live."}</h1>
+            {!account && <p className="muted">Cricket, football, kabaddi, badminton and more. Follow live matches anywhere, or sign in to score your own.</p>}
           </div>
         </header>
         <div className="filter-compact" style={{ marginTop: 12 }}>
@@ -132,7 +132,7 @@ function LiveNow({ sport }: { sport: string }) {
   const live = useLiveMatches(sport);
   const name = sport ? sportOf(sport).name.toLowerCase() : "";
   return (
-    <Section title={sport ? `Live ${name} near you` : "Live near you"} action={live.data?.length ? <SeeAll to="/matches" label="All matches" /> : undefined}>
+    <Section title={sport ? `Live ${name}` : "Live now"} action={live.data?.length ? <SeeAll to="/matches" label="All matches" /> : undefined}>
       {live.isPending ? (
         <Skeleton height={210} radius={28} />
       ) : live.data?.length ? (

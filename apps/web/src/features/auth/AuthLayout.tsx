@@ -23,7 +23,7 @@ export function AuthLayout({ title, subtitle, children, footer }: { title: strin
         </Link>
         <div className="auth-pitch">
           <h2>
-            Every local game, <em>live.</em>
+            Every game, every sport, <em>live.</em>
           </h2>
           <ul>
             {POINTS.map((p) => (

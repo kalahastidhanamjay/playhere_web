@@ -1,9 +1,11 @@
 import { CalendarDays, MapPin, PenLine as Scoreboard, Shield, Trophy } from "lucide-react";
 import type { CSSProperties } from "react";
-import { useParams } from "react-router";
+import { useParams, useSearchParams } from "react-router";
 import { BallChip } from "@/components/cards";
 import { ButtonLink, Crest, Group, GroupRow, PageHeader, QueryView, Section, SkeletonList, StatusPill } from "@/components/ui";
-import { useMatchCenter } from "@/data/matches";
+import { useMatchCenter, useScorecard } from "@/data/matches";
+import { Tabs } from "@/components/forms";
+import { Scorecard } from "./Scorecard";
 import { SportTag } from "@/components/sport";
 import { away, canScore, chase, formatLabel, matchContext, groupByOver, headline, home, inningsFor, periodName, score, sideScore, sortedInnings, stageLabel, teamById, thisOver } from "@/domain/cricket";
 import type { Innings, Match, TeamRef } from "@/domain/models";
@@ -16,6 +18,10 @@ export default function MatchCenterPage() {
   const { id = "" } = useParams();
   const query = useMatchCenter(id);
   const userId = useUserId();
+  // The tab lives in the URL so a scorecard link can be shared (…/matches/:id?tab=scorecard).
+  const [params, setParams] = useSearchParams();
+  const tab: "summary" | "scorecard" = params.get("tab") === "scorecard" ? "scorecard" : "summary";
+  const setTab = (t: "summary" | "scorecard") => setParams(t === "scorecard" ? { tab: t } : {}, { replace: true });
   return (
     <div className="page">
       <QueryView query={query} loading={<SkeletonList count={3} height={180} />}>
@@ -86,6 +92,21 @@ export default function MatchCenterPage() {
                 </Section>
               )}
 
+              {cricket && (
+                <div style={{ marginTop: 24 }}>
+                  <Tabs<"summary" | "scorecard">
+                    value={tab}
+                    onChange={setTab}
+                    tabs={[{ value: "summary", label: "Summary" }, { value: "scorecard", label: "Scorecard" }]}
+                  />
+                </div>
+              )}
+              {cricket && tab === "scorecard" ? (
+                <div style={{ marginTop: 20 }}>
+                  <ScorecardTab id={match.id} live={match.status === "LIVE"} />
+                </div>
+              ) : (
+                <>
               {over.length > 0 && (
                 <Section title="This over">
                   <div className="row wrap" style={{ "--gap": "8px" } as CSSProperties}>
@@ -120,6 +141,8 @@ export default function MatchCenterPage() {
                 </Section>
               )}
 
+                </>
+              )}
                 </div>
                 <aside className="rail">
               <Section title="Match info">
@@ -138,6 +161,15 @@ export default function MatchCenterPage() {
         }}
       </QueryView>
     </div>
+  );
+}
+
+function ScorecardTab({ id, live }: { id: string; live: boolean }) {
+  const query = useScorecard(id, true, live);
+  return (
+    <QueryView query={query} loading={<SkeletonList count={2} height={220} />}>
+      {(data) => <Scorecard data={data} live={live} />}
+    </QueryView>
   );
 }
 

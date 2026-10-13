@@ -80,6 +80,30 @@ export interface PointEvent {
   createdAt: string | null;
 }
 
+/** GET /matches/{id}/scorecard */
+export interface ScorecardData {
+  matchId: string;
+  innings: InningsCard[];
+}
+
+export interface InningsCard {
+  inningsId: string;
+  inningsNo: number;
+  battingTeamId: string;
+  battingTeam: string;
+  bowlingTeamId: string;
+  bowlingTeam: string;
+  runs: number;
+  wickets: number;
+  overs: string;
+  completed: boolean;
+  batting: { playerId: string; name: string; dismissal: string; notOut: boolean; onStrike: boolean; runs: number; balls: number; fours: number; sixes: number; strikeRate: string }[];
+  extras: { total: number; wides: number; noBalls: number; byes: number; legByes: number };
+  yetToBat: string[];
+  fallOfWickets: { wicket: number; score: number; playerId: string; name: string; over: string }[];
+  bowling: { playerId: string; name: string; overs: string; maidens: number; runs: number; wickets: number; wides: number; noBalls: number; economy: string; bowling: boolean }[];
+}
+
 export interface BallEvent {
   id: string;
   runs: number;

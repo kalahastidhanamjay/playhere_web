@@ -19,7 +19,7 @@ export default function TournamentsPage() {
     <div className="page">
       <PageHeader
         title="Tournaments"
-        subtitle="Leagues and knockouts in every sport near you"
+        subtitle="Leagues and knockouts in every sport"
         actions={<ButtonLink to="/tournaments/new" size="sm" variant="tonal" icon={Plus}>Host</ButtonLink>}
       />
       <div className="stack" style={{ gap: 16 }}>
@@ -48,7 +48,7 @@ export default function TournamentsPage() {
 function List({ status, sport }: { status: Exclude<Filter, "MINE">; sport: string }) {
   const query = useTournaments(status);
   const empty = {
-    UPCOMING: <Empty icon={UserCheck} title="No tournaments taking teams" message="Host one and share it with captains near you." action={<ButtonLink to="/tournaments/new">Host a tournament</ButtonLink>} />,
+    UPCOMING: <Empty icon={UserCheck} title="No tournaments taking teams" message="Host one and share it with captains." action={<ButtonLink to="/tournaments/new">Host a tournament</ButtonLink>} />,
     LIVE: <Empty icon={Radio} title="Nothing in progress" message="Tournaments appear here once their fixtures are drawn." />,
     COMPLETED: <Empty icon={History} title="No finished tournaments yet" />,
   }[status];
